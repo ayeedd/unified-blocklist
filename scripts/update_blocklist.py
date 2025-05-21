@@ -1,6 +1,27 @@
 import requests
 import os
 
+"""
+update_blocklist.py
+
+This script downloads multiple domain blocklists from predefined URLs,
+merges them into a single unified blocklist, removes duplicates and comments,
+and saves the combined list to a file for use in ad-blocking tools like AdGuard.
+
+Usage:
+    python update_blocklist.py
+
+Output:
+    data/unified_blocklist.txt - unified domain blocklist file
+
+Requirements:
+    - Python 3.x
+    - requests library (install via pip if missing)
+
+Author: Your Name
+Date: 2025-05-21
+"""
+
 urls = [
     "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/doh-vpn-proxy-bypass.txt",
     "https://adguardteam.github.io/HostlistsRegistry/assets/filter_2.txt",
@@ -42,30 +63,35 @@ urls = [
     "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
     "https://raw.githubusercontent.com/notracking/hosts-blocklists/master/hostnames.txt",
     "https://raw.githubusercontent.com/notracking/hosts-blocklists/master/domains.txt",
-    "https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt"
+    "https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt",
+    # الرابط https://o0.pages.dev/Pro/1hosts هو غير متوفر أو يعطي خطأ 404 - يمكنك حذفه أو تعليقه مؤقتاً
+    # "https://o0.pages.dev/Pro/1hosts"
 ]
 
-domains = set()
+domains = set()  # تجميع الدومينات بدون تكرار
 
 for url in urls:
     try:
-        r = requests.get(url, timeout=15)
-        r.raise_for_status()
-        lines = r.text.splitlines()
+        print(f"Downloading: {url}")
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()
+        lines = response.text.splitlines()
         for line in lines:
             line = line.strip()
-            if line and not line.startswith("#"):
+            # تجاهل السطور الفارغة والتعليقات
+            if line and not (line.startswith("#") or line.startswith("!")):
                 domains.add(line)
     except Exception as e:
         print(f"Failed to download {url}: {e}")
 
-if not os.path.exists("data"):
-    os.makedirs("data")
+# إنشاء مجلد data إذا لم يكن موجودًا
+os.makedirs("data", exist_ok=True)
 
-output_path = "data/unified_blocklist.txt"
+output_file = "data/unified_blocklist.txt"
 
-with open(output_path, "w", encoding="utf-8") as f:
+# حفظ الدومينات بالترتيب الأبجدي في الملف
+with open(output_file, "w", encoding="utf-8") as f:
     for domain in sorted(domains):
         f.write(domain + "\n")
 
-print(f"Saved {len(domains)} domains to {output_path}")
+print(f"\nSaved {len(domains)} domains to {output_file}")
